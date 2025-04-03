@@ -15,7 +15,7 @@ func createUser(context *gin.Context) {
 		return
 	}
 	//insert user info into the database
-	_, err := Db.Exec("INSERT INTO splitly.user_dimension (id, first_name, last_name, profile_picture_url) VALUES ($1, $2, $3)", user.Id, user.FirstName, user.LastName, user.ProfilePic)
+	_, err := Db.Exec(InsertIntoTable("splitly.user_dimension", []string{"id", "first_name", "last_name", "profile_picture_url"}), user.Id, user.FirstName, user.LastName, user.ProfilePic)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -24,7 +24,7 @@ func createUser(context *gin.Context) {
 }
 
 func getUsers(c *gin.Context) {
-	rows, err := Db.Query("SELECT id, first_name, last_name, profile_picture_url FROM splitly.user_dimension")
+	rows, err := Db.Query(SelectFromTable("splitly.user_dimension", []string{"id", "first_name", "last_name", "profile_picture_url"}, ""))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -53,8 +53,10 @@ func getUsers(c *gin.Context) {
 func getUser(c *gin.Context) {
 	id := c.Param("id")
 	var user User
-	err := Db.QueryRow("SELECT id, first_name,last_name,profile_picture_url FROM splitly.user_dimension WHERE id = $1", id).
+
+	err := Db.QueryRow(SelectFromTable("splitly.user_dimension", []string{"id", "first_name", "last_name", "profile_picture_url"}, "id = $1"), id).
 		Scan(&user.Id, &user.FirstName, &user.LastName, &user.ProfilePic)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
